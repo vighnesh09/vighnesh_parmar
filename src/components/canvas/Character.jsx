@@ -4,7 +4,7 @@ import { RigidBody, CapsuleCollider } from '@react-three/rapier';
 import { useCharacterController } from '../../hooks/useCharacterController';
 import { useThirdPersonCamera } from '../../hooks/useThirdPersonCamera';
 
-export function Character() {
+export function Character({ isIntro }) {
   const group = useRef();
   const rb = useRef();
   
@@ -49,14 +49,15 @@ export function Character() {
   // Camera Helper
   // Target the Group (visual) so we can get standard Object3D properties like getWorldPosition().
   // Using RigidBody ref directly fails because it doesn't have a standard .position property.
-  const { yaw } = useThirdPersonCamera({ target: group });
+  const { yaw } = useThirdPersonCamera({ target: group, isIntro });
 
   // Controller Logic
   useCharacterController({
     animations: { actions, mixer },
     rigidBody: rb,
     group, // For rotation
-    getCameraYaw: () => yaw.current
+    getCameraYaw: () => yaw.current,
+    isIntro
   });
 
   useEffect(() => {
