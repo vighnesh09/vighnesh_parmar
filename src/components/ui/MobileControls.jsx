@@ -55,7 +55,7 @@ export default function MobileControls({ visible }) {
 
   // Button Handlers
   const handleJump = (state) => setInput(prev => ({ ...prev, jump: state }));
-  const toggleRun = () => setInput(prev => ({ ...prev, run: !prev.run }));
+
 
   useEffect(() => {
     const handleUp = () => handleEnd();
@@ -93,16 +93,6 @@ export default function MobileControls({ visible }) {
 
         {/* Action Buttons */}
         <div className="absolute bottom-12 right-12 flex items-center gap-6 pointer-events-auto">
-             {/* Run Toggle */}
-            <button
-                onClick={toggleRun}
-                className={`w-16 h-16 rounded-full border flex items-center justify-center transition-all ${
-                    input.run ? 'bg-white/20 text-white border-white/50' : 'bg-transparent text-white/50 border-white/10'
-                }`}
-            >
-                <span className="font-bold text-[10px] tracking-widest">RUN</span>
-            </button>
-
             {/* Jump Button */}
             <button
                 onMouseDown={() => handleJump(true)}

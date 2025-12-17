@@ -1,5 +1,5 @@
 import { useRef, useEffect } from 'react';
-import { useFrame } from '@react-three/fiber';
+import { useFrame, useLoader } from '@react-three/fiber';
 import { useRapier } from '@react-three/rapier';
 import * as THREE from 'three';
 import { useInput } from './useInput';
@@ -21,6 +21,27 @@ export function useCharacterController({ animations, rigidBody, group, getCamera
   const isGrounded = useRef(true);
   const isJumping = useRef(false); // For animation states
   const inputVector = useRef(new THREE.Vector3());
+  const movementDuration = useRef(0); // Track how long user has been moving
+
+  // Audio State
+  const runSoundBuffer = useLoader(THREE.AudioLoader, "/sound/running_on_concrete.mp3");
+  const audioContext = useRef(null);
+  const audioSource = useRef(null);
+  const gainNode = useRef(null);
+
+  // Initialize Audio Context & Gain
+  useEffect(() => {
+    audioContext.current = THREE.AudioContext.getContext();
+    gainNode.current = audioContext.current.createGain();
+    gainNode.current.gain.value = 0.6; // Volume
+    gainNode.current.connect(audioContext.current.destination);
+
+    return () => {
+        if (audioSource.current) {
+            audioSource.current.stop();
+        }
+    };
+  }, []);
 
   // Animation Management
   useEffect(() => {
@@ -92,10 +113,37 @@ export function useCharacterController({ animations, rigidBody, group, getCamera
         inputVector.current.normalize();
     }
     
-    const isRunning = input.run;
-    const targetSpeed = (inputVector.current.lengthSq() > 0) 
-        ? (isRunning ? runSpeed : walkSpeed) 
-        : 0;
+    const isRunning = input.run; // keep shift for instant run if desired, or remove if auto-only
+    
+    // Auto-acceleration Logic
+    if (inputVector.current.lengthSq() > 0) {
+        movementDuration.current += delta;
+    } else {
+        movementDuration.current = 0;
+    }
+
+    let targetSpeed = 0;
+    if (inputVector.current.lengthSq() > 0) {
+        // Constants
+        const WALK_DURATION = 0.2; // Seconds to walk before running
+        const RAMP_DURATION = 0.5; // Seconds to ramp from walk to run
+        
+        if (isRunning) {
+            // Shift key forces run immediately
+             targetSpeed = runSpeed;
+        } else {
+            if (movementDuration.current < WALK_DURATION) {
+                targetSpeed = walkSpeed;
+            } else {
+                 const accelerationTime = movementDuration.current - WALK_DURATION;
+                 const t = Math.min(accelerationTime / RAMP_DURATION, 1.0);
+                 // Smooth ease-in-out or just linear? Linear is usually fine for speed ramp.
+                 targetSpeed = THREE.MathUtils.lerp(walkSpeed, runSpeed, t);
+            }
+        }
+    } else {
+        targetSpeed = 0;
+    }
     
     // --- 3. Orientation & Banking ---
     const yaw = getCameraYaw();
@@ -130,8 +178,16 @@ export function useCharacterController({ animations, rigidBody, group, getCamera
     
     // Variable Inertia
     const isMoving = inputVector.current.lengthSq() > 0;
-    // Faster acceleration, slower deceleration (slide)
-    const inertia = isMoving ? (isRunning ? 8.0 : 10.0) : 5.0; 
+    const currentSpeed = Math.sqrt(currentVel.x**2 + currentVel.z**2);
+    
+    let inertia = 10.0;
+    if (isMoving) {
+        // While moving: Run = 8.0 (smoother), Walk = 10.0 (responsive)
+        inertia = (isRunning || targetSpeed > walkSpeed * 1.2) ? 8.0 : 10.0;
+    } else {
+         // While stopping: High speed = 5.0 (slide), Low speed = 10.0 (quick stop)
+         inertia = (currentSpeed > walkSpeed * 1.2) ? 5.0 : 10.0; 
+    } 
     
     const alpha = 1.0 - Math.exp(-inertia * delta);
     
@@ -162,6 +218,37 @@ export function useCharacterController({ animations, rigidBody, group, getCamera
     
     const speed = Math.sqrt(newX*newX + newZ*newZ);
     
+    // Audio Logic in useFrame
+    const shouldPlay = grounded && speed > 2.5; 
+    
+    if (shouldPlay) {
+        if (!audioSource.current && audioContext.current) {
+            // Resume context if suspended (browser requirement)
+            if (audioContext.current.state === 'suspended') {
+                audioContext.current.resume();
+            }
+            
+            const src = audioContext.current.createBufferSource();
+            src.buffer = runSoundBuffer;
+            src.loop = true;
+            // TRIM LOGIC: Adjust these to remove start/stop silence
+            src.loopStart = 0.5; 
+            // Safety check for duration
+            const duration = runSoundBuffer.duration || 10; 
+            // Trim 1.5s from end if duration allows, else just 0.5s margin
+            src.loopEnd = Math.max(0.6, duration - 1.7); 
+            
+            src.connect(gainNode.current);
+            src.start(0);
+            audioSource.current = src;
+        }
+    } else {
+        if (audioSource.current) {
+            audioSource.current.stop();
+            audioSource.current = null;
+        }
+    }
+
     if (!grounded) {
        jumpW = 1.0;
     } else {
