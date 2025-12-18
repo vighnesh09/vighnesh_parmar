@@ -11,11 +11,13 @@ export default function MobileControls({ visible }) {
 
   // Joystick Logic
   const handleStart = (e) => {
+    e.stopPropagation(); // Prevent camera from moving when touching joystick
     setActive(true);
     handleMove(e);
   };
 
   const handleMove = (e) => {
+    e.stopPropagation(); 
     if (!active && e.type !== 'touchstart' && e.type !== 'mousedown') return;
     
     // Normalize touch/mouse position
@@ -47,14 +49,18 @@ export default function MobileControls({ visible }) {
     setInput(prev => ({ ...prev, joystick: { x: normX, y: normY } }));
   };
 
-  const handleEnd = () => {
+  const handleEnd = (e) => {
+    // e.stopPropagation(); // Optional on end, but consistent
     setActive(false);
     setJoystickPos({ x: 0, y: 0 });
     setInput(prev => ({ ...prev, joystick: { x: 0, y: 0 } }));
   };
 
   // Button Handlers
-  const handleJump = (state) => setInput(prev => ({ ...prev, jump: state }));
+  const handleJump = (state, e) => {
+    if(e) e.stopPropagation();
+    setInput(prev => ({ ...prev, jump: state }));
+  }
 
 
   useEffect(() => {
@@ -72,13 +78,14 @@ export default function MobileControls({ visible }) {
   return (
     <div className="absolute inset-0 z-20 pointer-events-none lg:hidden select-none overflow-hidden">
         
-        {/* Joystick Area */}
+        {/* Joystick Area - Positioned nicely for left thumb */}
         <div 
-            className="absolute bottom-12 left-12 w-32 h-32 rounded-full bg-white/5 backdrop-blur-[2px] border border-white/10 pointer-events-auto touch-none transition-opacity duration-200 hover:opacity-100 opacity-80"
+            className="absolute bottom-8 left-8 w-32 h-32 rounded-full bg-white/5 backdrop-blur-[2px] border border-white/10 pointer-events-auto touch-none transition-opacity duration-200 hover:opacity-100 opacity-80"
             onMouseDown={handleStart}
             onTouchStart={handleStart}
             onMouseMove={handleMove}
             onTouchMove={handleMove}
+            // onTouchEnd handled by window, but we can add self-cleanup if confused
         >
             <div 
                 ref={joystickRef}
@@ -91,19 +98,21 @@ export default function MobileControls({ visible }) {
             />
         </div>
 
-        {/* Action Buttons */}
-        <div className="absolute bottom-12 right-12 flex items-center gap-6 pointer-events-auto">
+        {/* Action Buttons - Positioned for right thumb */}
+        <div className="absolute bottom-16 right-8 flex items-center gap-6 pointer-events-auto">
             {/* Jump Button */}
             <button
-                onMouseDown={() => handleJump(true)}
-                onMouseUp={() => handleJump(false)}
-                onTouchStart={() => handleJump(true)}
-                onTouchEnd={() => handleJump(false)}
-                className="w-24 h-24 rounded-full bg-white/10 backdrop-blur-md border border-white/20 active:bg-white/30 active:scale-95 transition-all flex items-center justify-center"
+                onMouseDown={(e) => handleJump(true, e)}
+                onMouseUp={(e) => handleJump(false, e)}
+                onTouchStart={(e) => handleJump(true, e)}
+                onTouchEnd={(e) => handleJump(false, e)}
+                className="w-20 h-20 rounded-full bg-white/10 backdrop-blur-md border border-white/20 active:bg-white/30 active:scale-95 transition-all flex items-center justify-center shadow-lg"
             >
-                <span className="font-bold text-sm tracking-wider text-white/90">JUMP</span>
+                <span className="font-bold text-xs tracking-wider text-white/90">JUMP</span>
             </button>
         </div>
+        
+
     </div>
   );
 }

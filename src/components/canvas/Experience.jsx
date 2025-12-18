@@ -2,8 +2,9 @@ import React, { useMemo } from 'react';
 import * as THREE from 'three';
 import { RigidBody } from '@react-three/rapier';
 import { Character } from './Character';
+import { City } from './City';
 
-import { PortfolioWorld } from './PortfolioWorld';
+
 
 export function Experience({ isIntro }) {
   return (
@@ -19,14 +20,7 @@ export function Experience({ isIntro }) {
       </directionalLight>
       <ambientLight intensity={0.5} />
 
-      <RigidBody type="fixed" colliders="hull">
-        <mesh rotation-x={-Math.PI / 2} receiveShadow>
-          <planeGeometry args={[400, 400]} />
-          <meshStandardMaterial color={0x151515} />
-        </mesh>
-      </RigidBody>
-
-      <PortfolioWorld />
+      <City />
       <Character isIntro={isIntro} />
     </>
   );

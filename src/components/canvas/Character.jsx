@@ -1,8 +1,9 @@
 import React, { useRef, useEffect, useMemo } from 'react';
-import { useGLTF, useAnimations } from '@react-three/drei';
+import { useGLTF, useAnimations, Html } from '@react-three/drei';
 import { RigidBody, CapsuleCollider } from '@react-three/rapier';
 import { useCharacterController } from '../../hooks/useCharacterController';
 import { useThirdPersonCamera } from '../../hooks/useThirdPersonCamera';
+import { DialogueBox } from '../ui/DialogueBox';
 
 export function Character({ isIntro }) {
   const group = useRef();
@@ -52,13 +53,18 @@ export function Character({ isIntro }) {
   const { yaw } = useThirdPersonCamera({ target: group, isIntro });
 
   // Controller Logic
-  useCharacterController({
+  const { isAfk } = useCharacterController({
     animations: { actions, mixer },
     rigidBody: rb,
     group, // For rotation
     getCameraYaw: () => yaw.current,
     isIntro
   });
+
+  // Debugging log - remove after verification if desired
+  useEffect(() => {
+    console.log("Character State:", { isIntro, isAfk });
+  }, [isIntro, isAfk]);
 
   useEffect(() => {
     scene.traverse((child) => {
@@ -75,13 +81,18 @@ export function Character({ isIntro }) {
       ref={rb} 
       colliders={false} 
       lockRotations 
-      position={[0, 1, 0]} 
+      position={[0, 10, 0]} 
       friction={1} // prevent sliding when stopped
     >
       <CapsuleCollider args={[0.8, 0.4]} position={[0, 0.8, 0]} />
       
       <group ref={group} dispose={null}>
         <primitive object={scene} />
+        {isAfk && !isIntro && (
+            <Html position={[0, 2.2, 0]} center distanceFactor={10} zIndexRange={[100, 0]}>
+                <DialogueBox speaker="Vighnesh" autoHide={false} isIntro={isIntro} />
+            </Html>
+        )}
       </group>
     </RigidBody>
   );

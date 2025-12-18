@@ -16,9 +16,10 @@ export default function Home() {
         <div className="absolute inset-0">
           <Scene isIntro={isIntro} onStart={() => setIsIntro(false)} />
         </div>
-        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-end gap-2 bg-gradient-to-t from-black/70 via-transparent to-transparent p-4 lg:p-8 text-center text-xs md:text-sm tracking-wide uppercase text-white/85">
-          <p>WASD / Arrows to Move · Shift to Run · Drag Mouse to Look</p>
-          <p className="text-[10px] md:text-xs text-white/60">boy.glb · R3F Controller Demo</p>
+        <div className="pointer-events-none absolute bottom-8 left-0 right-0 flex justify-center">
+          <p className="bg-black/50 backdrop-blur-sm px-4 py-2 rounded-full text-xs font-bold tracking-widest text-white/80 uppercase">
+            WASD to Move · Space to Jump
+          </p>
         </div>
         <MobileControls visible={!isIntro} />
       </div>
