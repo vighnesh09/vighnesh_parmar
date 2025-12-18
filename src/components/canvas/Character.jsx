@@ -99,7 +99,7 @@ export function Character({ isIntro }) {
 }
 
 // Preload to avoid pop-in
-useGLTF.preload('/models/Breathing_Idle.glb');
-useGLTF.preload('/models/walking.glb');
-useGLTF.preload('/models/running.glb');
-useGLTF.preload('/models/jumping.glb');
+// useGLTF.preload('/models/Breathing_Idle.glb');
+// useGLTF.preload('/models/walking.glb');
+// useGLTF.preload('/models/running.glb');
+// useGLTF.preload('/models/jumping.glb');
